@@ -1,14 +1,13 @@
-; v1.2 Naveen 
-; changed w3 to w3m 
-;;; ahk-mode.el --- major mode for editing AutoHotKey scripts for X/GNU Emacs
-
+; ahk-org-mode.el --- major mode for editing AutoHotKey scripts for X/GNU Emacs combined with org-mode 
+;; v0.1 Naveen Garg
+;; modified from org-mode by Robert Widhopf-Fenk
+;; Authors:   Robert Widhopf-Fenk
 ;; Copyright (C) 2005 Robert Widhopf-Fenk
-
-;; Author:   Robert Widhopf-Fenk
+;;            Naveen Garg
+;; Copyright (C) 2009 Naveen Garg
 ;; Keywords: AutoHotKey, major mode
-;; X-URL:    http://www.robf.de/Hacking/elisp
-;; arch-tag: 1ae180cb-002e-4656-bd9e-a209acd4a3d4
-;; Version:  $Id: ahk-mode--main--1.0--patch-4$
+;; ahk-org-mode-URL:   http://www.autohotkey.com/~tinku99
+;; original ahk-mode:  http://www.robf.de/Hacking/elisp/
 
 ;; This code is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -21,22 +20,21 @@
 ;; GNU General Public License for more details.
 ;;
 
-;;; Commentary:
+;; Commentary:
 ;;
-;; AutoHotKey: Automation, Hotkeys and Scripting for Windows at
-;; http://www.autohotkey.com/ is a cool tool to make daily life
-;; with Windows easier or even fun!
-;;
-;; This is a X/GNU Emacs mode for editing AutoHotKey scripts.
+;; ahk-org-mode was motivated by my interest in having code folding 
+;; for AutoHotKey in emacs.  Org-mode was a perfect fit, but it does not come in;; a minor mode, and the *stars* of org-mode would break the ahk-code.  
 ;;
 ;; Place this file somewhere in your load-path, byte-compile it and add the
 ;; following line to your ~/.xemacs/init.el resp. ~/.emacs:
 ;;
 ;; (setq ahk-syntax-directory "PATHTO/AutoHotkey/Extras/Editors/Syntax/")
-;; (add-to-list 'auto-mode-alist '("\\.ahk$" . ahk-mode))
-;; (autoload 'ahk-mode "ahk-mode")
+;; (add-to-list 'auto-mode-alist '("\\.ahk$" . ahk-org-mode))
+;; (autoload 'ahk-org-mode "ahk-org-mode")
 ;; 
-;; The first time ahk-mode.el is started it will ask you for the path to the
+;; you'll also want to get w3m, binaries availablel with cygwin and add 
+;; that to your load-path in emacs
+;; The first time ahk-org-mode.el is started it will ask you for the path to the
 ;; Syntax directory if not set already.  You will find it as a subdirectory
 ;; of your AHK installation.
 ;;
@@ -44,61 +42,46 @@
 ;; C:/Programms/AutoHotKey/Extras/Editors/Syntax or a corresponding cygwin
 ;; path!
 ;;
-;; When opening a script file you will get:
+;; *** FEATURES***
 ;; - syntax highlighting
-;; - indention, completion and command help (bound to "TAB")
-;; - insertion of command templates (bound to "C-c C-i") 
-;; - electric braces (typing "{" will also insert "}" and place point in
-;;   between) 
-;; - lookup the docs on a command via w3 (place point on command and type
-;;   "C-c C-h")
-;;
-;; Please send bug-reports or feature suggestions to hackATrobfDOTde.
-
+;; - indention, completion and command help (bound to "C-c TAB")
+;; - lookup the docs on a command via w3m with F1
+;; - search and browse ahk-forums in w3m with F2
+;; - code folding using ';' as the headline delimiter instead of '*'
+;; - integration with w3m for browsing the ahk-documentation and forums
 ;;; Bugs:
-;;
-;; - completions is not really context aware
-;; - multi-line comments are not fontified correctly while editing,
-;;   but only when fontifying the whole buffer.  If you know how to
-;;   fix this, please let me know!
-
-;;; History:
-;;
-;; The CHANGELOG is stored in my arch repository.
-;;
-;; If you wonder what arch is, take a look at http://wiki.gnuarch.org/ !
+;; post bug reports on autohotkey forum
+;; http://www.autohotkey.com/forum/viewtopic.php?t=35690&highlight=code+folding
 
 (eval-when-compile
   (require 'font-lock)
-  (if (locate-library "w3m") (require 'w3m))
+;  (if (locate-library "w3m") (require 'w3m))
   (require 'cl))
 
 ;;; Code:
-(defgroup ahk-mode nil
+(defgroup ahk-org-mode nil
   "A mode for AutoHotKey"
   :group 'languages
   :prefix "ahk-")
 
-(defcustom ahk-mode-hook '(ahk-mode-hook-activate-filling)
-  "Hook functions run by `ahk-mode'."
+(defcustom ahk-org-mode-hook '(ahk-org-mode-hook-activate-filling)
+  "Hook functions run by `ahk-org-mode'."
   :type 'hook
-  :group 'ahk-mode)
-
+  :group 'ahk-org-mode)
 (defcustom ahk-indetion 2
   "The indetion level."
   :type 'integer
-  :group 'ahk-mode)
-
+  :group 'ahk-org-mode)
 (defcustom ahk-syntax-directory nil
   "The indetion level."
   :type 'directory
-  :group 'ahk-mode)
+  :group 'ahk-org-mode)
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist
-             '("\\.ahk$"  . ahk-mode))
+             '("\\.ahk$"  . ahk-org-mode))
 
-(defvar ahk-mode-syntax-table
+(defvar ahk-org-mode-syntax-table
   (let ((table (make-syntax-table)))
     ;; these are also allowed in variable names
     (modify-syntax-entry ?#  "w" table)
@@ -121,25 +104,26 @@
     (modify-syntax-entry ?\^m "> b" table)
     (modify-syntax-entry ?\n "> b"  table)
     table)
-  "Syntax table used in `ahk-mode' buffers.")
+  "Syntax table used in `ahk-org-mode' buffers.")
 
-(defvar ahk-mode-abbrev-table
+(defvar ahk-org-mode-abbrev-table
   (let ((a (make-abbrev-table)))
     a)
-  "Abbreviation table used in `ahk-mode' buffers.")
+  "Abbreviation table used in `ahk-org-mode' buffers.")
 
-(defvar ahk-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map "\C-c\C-h" 'ahk-www-help-at-point)
-    (define-key map [f1] 'ahk-www-help-at-point)
-    (define-key map "\C-c\C-c" 'ahk-comment-region)
-    (define-key map "\C-c\C-i" 'ahk-insert-command-template)
-    (define-key map "\t" 'ahk-indent-line-and-complete)
-    (define-key map "{" 'ahk-electric-brace)
-    (define-key map "}" 'ahk-electric-brace)
-    (define-key map "\r" 'ahk-electric-return)
-    map)
-  "Keymap used in `ahk-mode' buffers.")
+(defun ahk-keys()
+    (local-set-key "\C-c\C-h" 'ahk-www-help-at-point)
+    (local-set-key [f1] 'ahk-www-help-at-point)
+    (local-set-key [f2] 'ahk-www-forum-at-point)
+
+(local-set-key "\C-c\C-c" 'ahk-comment-region)
+    (local-set-key "\C-c\C-i" 'ahk-insert-command-template)
+  (local-set-key "\C-c\t" 'ahk-indent-line-and-complete)
+    (local-set-key "\M-c\t" 'ahk-indent-region)
+    (local-set-key "}" 'ahk-electric-brace)
+)
+
+
 
 (defvar ahk-Commands-list nil
   "A list of ahk commands and parameters.
@@ -157,29 +141,29 @@ Will be initialized by `ahk-init'")
   "A list of ahks variables.
 Will be initialized by `ahk-init'")
 
-(defvar ahk-mode-font-lock-keywords nil
-  "Syntax highlighting for `ahk-mode'.
+(defvar ahk-org-mode-font-lock-keywords nil
+  "Syntax highlighting for `ahk-org-mode'.
 Will be initialized by `ahk-init'")
 
 (defvar ahk-completion-list nil
   "A list of all symbols available for completion
 Will be initialized by `ahk-init'")
 
-(easy-menu-define ahk-menu ahk-mode-map "AHK Mode Commands"
+(easy-menu-define ahk-menu (current-local-map) "AHK Mode Commands"
 		  '("AHK"
                     ["Insert Command Template" ahk-insert-command-template]
                     ["Lookup webdocs on command" ahk-www-help-at-point]
                     ))
 
 (defun ahk-init ()
-  "Initialize ahk-mode variables.
+  "Initialize ahk-org-mode variables.
 An AHK installation provides a subdirectory \"Extras/Editors/Syntax\"
 containing a list of keywords, variables, commands and keys.
 
 This directory must be specified in the variable `ahk-syntax-directory'."
   (interactive)
 
-  (message "Initializing ahk-mode variables ...")
+  (message "Initializing ahk-org-mode variables ...")
   (when (null ahk-syntax-directory)
     (customize-save-variable
      'ahk-syntax-directory
@@ -187,8 +171,7 @@ This directory must be specified in the variable `ahk-syntax-directory'."
     (custom-save-all))
 
   (save-excursion
-    (set-buffer (get-buffer-create " *ahk-mode-temp*"))
-  
+    (set-buffer (get-buffer-create " *ahk-org-mode-temp*"))
     ;; read commands
     (erase-buffer)
     (insert-file-contents (expand-file-name "Commands.txt"
@@ -247,7 +230,7 @@ This directory must be specified in the variable `ahk-syntax-directory'."
                           ahk-Variables-list
                           ahk-Keys-list)))
 
-    (setq ahk-mode-font-lock-keywords
+    (setq ahk-org-mode-font-lock-keywords
           (list
            '("\\s-*;.*$" .
              font-lock-comment-face)
@@ -284,8 +267,7 @@ This directory must be specified in the variable `ahk-syntax-directory'."
             'font-lock-constant-face)
            )))
   
-  (message "Initializing ahk-mode variables done."))
-
+  (message "Initializing ahk-org-mode variables done."))
 ;; this was an attempt to get multi-line comments correctly highlighted, I
 ;; tried to understand how cc-mode is doing it, but I have to admit I do not
 ;; understand it!
@@ -319,43 +301,46 @@ This directory must be specified in the variable `ahk-syntax-directory'."
           t))
        ))))
 
-(defun ahk-mode-hook-activate-filling ()
+(defun ahk-org-mode-hook-activate-filling ()
   "Activates `auto-fill-mode' and `filladapt-mode'."
+  (set-syntax-table ahk-org-mode-syntax-table)
+  (setq major-mode 'ahk-org-mode
+	major-mode-name "AHK"
+	local-abbrev-table ahk-org-mode-abbrev-table
+	abbrev-mode t
+;       indent-region-function 'ahk-indent-region
+)
+  (put 'ahk-org-mode 'font-lock-defaults '(ahk-org-mode-font-lock-keywords t))
+  (put 'ahk-org-mode 'font-lock-keywords-case-fold-search t)
+
+  (when (not (featurep 'xemacs))
+    (setq font-lock-defaults '(ahk-org-mode-font-lock-keywords))
+    (setq font-lock-keywords-case-fold-search t))
+  
+  ; (use-local-map ahk-org-mode-map)
+  (easy-menu-add ahk-menu)
+;  (setq comment-start ";")
+  (font-lock-mode 1)
+; (force-mode-line-update)
   (auto-fill-mode 1)
+  (setq outline-regexp  "[;\f]+")
+  (ahk-keys)
   (if (locate-library "filladapt")
       (filladapt-mode 1)))
 
+
 ;;;###autoload
-(defun ahk-mode ()
-  "Major mode for editing AutoHotKey Scripts.
-
-The hook functions in `ahk-mode-hook' are run after mode initialization.
-
+(defun ahk-org-mode ()
+  "minor mode for editing AutoHotKey Scripts.
+The hook functions in `ahk-org-mode-hook' are run after mode initialization.
 Key bindings:
-\\{ahk-mode-map}"
+\\{ahk-org-mode-map}"
   (interactive)
+  (kill-all-local-variables)
+  (org-mode)
   (if (null ahk-Commands-list)
       (ahk-init))
-  (kill-all-local-variables)
-  (set-syntax-table ahk-mode-syntax-table)
-  (setq major-mode 'ahk-mode
-	mode-name "AHK"
-	local-abbrev-table ahk-mode-abbrev-table
-	abbrev-mode t
-        indent-region-function 'ahk-indent-region)
-  (put 'ahk-mode 'font-lock-defaults '(ahk-mode-font-lock-keywords t))
-  (put 'ahk-mode 'font-lock-keywords-case-fold-search t)
-
-  (when (not (featurep 'xemacs))
-    (setq font-lock-defaults '(ahk-mode-font-lock-keywords))
-    (setq font-lock-keywords-case-fold-search t))
-  
-  (use-local-map ahk-mode-map)
-  (easy-menu-add ahk-menu)
-  (setq comment-start ";")
-  (font-lock-mode 1)
-  (force-mode-line-update)
-  (run-hooks 'ahk-mode-hook))
+  (run-hooks 'ahk-org-mode-hook))
 
 (defun ahk-indent-line ()
   "Indent the current line."
@@ -472,13 +457,13 @@ Key bindings:
         (skip-chars-backward " \t")
         (bolp))
       nil
-; (ahk-indent-line)
-; (newline) ; screws up sendkeys for keys like enter and tab
+ (ahk-indent-line)
+ (newline)
 )
   (self-insert-command arg)
   (ahk-indent-line)
-;  (newline)
-;  (ahk-indent-line)
+  (newline)
+  (ahk-indent-line)
 
   (let ((event  last-input-event))
     (setq event (if (featurep 'xemacs)
@@ -547,8 +532,33 @@ If no region is active use the current line."
     (if (looking-at "\\<\\w+")
         (ahk-www-help (match-string 0)))))
 
+(defun ahk-www-forum-at-point ()
+  (interactive)
+  (save-excursion
+    (re-search-backward "\\<\\w+")
+    (if (looking-at "\\<\\w+")
+        (ahk-www-forum (match-string 0)))))
+
 (defvar ahk-www-help-alist '()
   "Mapping of command to regexp for commands which are not unique.")
+
+
+(defun ahk-www-forum (command)
+  "Display online help for the given command"
+  (interactive (list
+                (completing-read "AHK command: "
+                                 ahk-completion-list nil t)))
+  (require 'w3m)
+  (w3m-goto-url (concat "http://www.google.com/search?as_q=" command "&hl=en&as_sitesearch=autohotkey.com"))
+  (goto-char (point-min))
+  (when (re-search-forward (regexp-quote command))
+    (goto-char (+ (match-beginning 0) 1))
+    (save-excursion
+      (if (re-search-forward (concat "^|" (regexp-quote command))
+                             (point-max) t)
+          (message "There is more than one occurrence of %s. Stopping at first match" command)
+        (widget-button-press (point))))))
+
 
 (defun ahk-www-help (command)
   "Display online help for the given command"
@@ -566,6 +576,6 @@ If no region is active use the current line."
           (message "There is more than one occurrence of %s. Stopping at first match" command)
         (widget-button-press (point))))))
 
-(provide 'ahk-mode)
+(provide 'ahk-org-mode)
 
-;;; ahk-mode.el ends here
+;;; ahk-org-mode.el ends here
