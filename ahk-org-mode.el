@@ -323,7 +323,7 @@ This directory must be specified in the variable `ahk-syntax-directory'."
   (font-lock-mode 1)
 ; (force-mode-line-update)
   (auto-fill-mode 1)
-  (setq outline-regexp  "[;\f]+")
+  (setq outline-regexp  "[;\f]+")  ; Naveen v0.1 change '*' to ';' for outline marker
   (ahk-keys)
   (if (locate-library "filladapt")
       (filladapt-mode 1)))
@@ -337,7 +337,7 @@ Key bindings:
 \\{ahk-org-mode-map}"
   (interactive)
   (kill-all-local-variables)
-  (org-mode)
+  (org-mode) ; Naveen v0.1
   (if (null ahk-Commands-list)
       (ahk-init))
   (run-hooks 'ahk-org-mode-hook))
