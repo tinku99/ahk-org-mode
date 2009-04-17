@@ -85,7 +85,7 @@
     (modify-syntax-entry ?\[ "_   " table)
     (modify-syntax-entry ?\] "_   " table)
     (modify-syntax-entry ?# "' 14b" table)
-    (modify-syntax-entry ?| "\" 23bn" table)
+    (modify-syntax-entry ?| "\" 23bn" table)   ; "
     table))
 
 (define-abbrev-table 'lisp-mode-abbrev-table ())
@@ -127,7 +127,7 @@
 
   "Imenu generic expression for Lisp mode.  See `imenu-generic-expression'.")
 
-;; This was originally in autoload.el and is still used there.
+;;; This was originally in autoload.el and is still used there.
 (put 'autoload 'doc-string-elt 3)
 (put 'defun    'doc-string-elt 3)
 (put 'defun*    'doc-string-elt 3)
@@ -160,6 +160,194 @@
   "The symbol property that holds the docstring position info.")
 
 ;; defun
+(defun org-cycle (&optional arg)
+  "Visibility cycling for Org-mode.
+
+- When this function is called with a prefix argument, rotate the entire
+  buffer through 3 states (global cycling)
+  1. OVERVIEW: Show only top-level headlines.
+  2. CONTENTS: Show all headlines of all levels, but no body text.
+  3. SHOW ALL: Show everything.
+  When called with two C-c C-u prefixes, switch to the startup visibility,
+  determined by the variable `org-startup-folded', and by any VISIBILITY
+  properties in the buffer.
+
+- When point is at the beginning of a headline, rotate the subtree started
+  by this line through 3 different states (local cycling)
+  1. FOLDED:   Only the main headline is shown.
+  2. CHILDREN: The main headline and the direct children are shown.
+               From this state, you can move to one of the children
+               and zoom in further.
+  3. SUBTREE:  Show the entire subtree, including body text.
+
+- When there is a numeric prefix, go up to a heading with level ARG, do
+  a `show-subtree' and return to the previous cursor position.  If ARG
+  is negative, go up that many levels.
+
+- When point is not at the beginning of a headline, execute the global
+  binding for TAB, which is re-indenting the line.  See the option
+  `org-cycle-emulate-tab' for details.
+
+- Special case: if point is at the beginning of the buffer and there is
+  no headline in line 1, this function will act as if called with prefix arg.
+  But only if also the variable `org-cycle-global-at-bob' is t."
+  (interactive "P")
+  (org-load-modules-maybe)
+  (let* (
+	 (bob-special (and org-cycle-global-at-bob (bobp)
+			   (not (looking-at outline-regexp))))
+	 (org-cycle-hook
+	  (if bob-special
+	      (delq 'org-optimize-window-after-visibility-change
+		    (copy-sequence org-cycle-hook))
+	    org-cycle-hook))
+	 (pos (point)))
+
+    (if (or bob-special (equal arg '(4)))
+	;; special case:  use global cycling
+	(setq arg t))
+
+    (cond
+
+     ((equal arg '(16))
+      (org-set-startup-visibility)
+      (message "Startup visibility, plus VISIBILITY properties."))
+
+     ((org-at-table-p 'any)
+      ;; Enter the table or move to the next field in the table
+      (or (org-table-recognize-table.el)
+	  (progn
+	    (if arg (org-table-edit-field t)
+	      (org-table-justify-field-maybe)
+	      (call-interactively 'org-table-next-field)))))
+
+     ((eq arg t) ;; Global cycling
+
+      (cond
+       ((and (eq last-command this-command)
+	     (eq org-cycle-global-status 'overview))
+	;; We just created the overview - now do table of contents
+	;; This can be slow in very large buffers, so indicate action
+	(message "CONTENTS...")
+	(org-content)
+	(message "CONTENTS...done")
+	(setq org-cycle-global-status 'contents)
+	(run-hook-with-args 'org-cycle-hook 'contents))
+
+       ((and (eq last-command this-command)
+	     (eq org-cycle-global-status 'contents))
+	;; We just showed the table of contents - now show everything
+	(show-all)
+	(message "SHOW ALL")
+	(setq org-cycle-global-status 'all)
+	(run-hook-with-args 'org-cycle-hook 'all))
+
+       (t
+	;; Default action: go to overview
+	(org-overview)
+	(message "OVERVIEW")
+	(setq org-cycle-global-status 'overview)
+	(run-hook-with-args 'org-cycle-hook 'overview))))
+
+     ((and org-drawers org-drawer-regexp
+	   (save-excursion
+	     (beginning-of-line 1)
+	     (looking-at org-drawer-regexp)))
+      ;; Toggle block visibility
+      (org-flag-drawer
+       (not (get-char-property (match-end 0) 'invisible))))
+
+     ((integerp arg)
+      ;; Show-subtree, ARG levels up from here.
+      (save-excursion
+	(org-back-to-heading)
+	(outline-up-heading (if (< arg 0) (- arg)
+			      (- (funcall outline-level) arg)))
+	(org-show-subtree)))
+
+     ((and (save-excursion (beginning-of-line 1) (looking-at outline-regexp))
+	   (or (bolp) (not (eq org-cycle-emulate-tab 'exc-hl-bol))))
+      ;; At a heading: rotate between three different views
+      (org-back-to-heading)
+      (let ((goal-column 0) eoh eol eos)
+	;; First, some boundaries
+	(save-excursion
+	  (org-back-to-heading)
+	  (save-excursion
+	    (beginning-of-line 2)
+	    (while (and (not (eobp)) ;; this is like `next-line'
+			(get-char-property (1- (point)) 'invisible))
+	      (beginning-of-line 2)) (setq eol (point)))
+	  (outline-end-of-heading)   (setq eoh (point))
+	  (org-end-of-subtree t)
+	  (unless (eobp)
+	    (skip-chars-forward " \t\n")
+	    (beginning-of-line 1) ; in case this is an item
+	    )
+	  (setq eos (1- (point))))
+	;; Find out what to do next and set `this-command'
+	(cond
+	 ((= eos eoh)
+	  ;; Nothing is hidden behind this heading
+	  (message "EMPTY ENTRY")
+	  (setq org-cycle-subtree-status nil)
+	  (save-excursion
+	    (goto-char eos)
+	    (outline-next-heading)
+	    (if (org-invisible-p) (org-flag-heading nil))))
+	 ((or (>= eol eos)
+	      (not (string-match "\\S-" (buffer-substring eol eos))))
+	  ;; Entire subtree is hidden in one line: open it
+	  (org-show-entry)
+	  (show-children)
+	  (message "CHILDREN")
+	  (save-excursion
+	    (goto-char eos)
+	    (outline-next-heading)
+	    (if (org-invisible-p) (org-flag-heading nil)))
+	  (setq org-cycle-subtree-status 'children)
+	  (run-hook-with-args 'org-cycle-hook 'children))
+	 ((and (eq last-command this-command)
+	       (eq org-cycle-subtree-status 'children))
+	  ;; We just showed the children, now show everything.
+	  (org-show-subtree)
+	  (message "SUBTREE")
+	  (setq org-cycle-subtree-status 'subtree)
+	  (run-hook-with-args 'org-cycle-hook 'subtree))
+	 (t
+	  ;; Default action: hide the subtree.
+	  (hide-subtree)
+	  (message "FOLDED")
+	  (setq org-cycle-subtree-status 'folded)
+	  (run-hook-with-args 'org-cycle-hook 'folded)))))
+
+     ;; TAB emulation and template completion
+     (buffer-read-only (org-back-to-heading))
+
+     ((org-try-structure-completion))
+
+     ((org-try-cdlatex-tab))
+
+     ((and (eq org-cycle-emulate-tab 'exc-hl-bol)
+	   (or (not (bolp))
+	       (not (looking-at outline-regexp))))
+      (call-interactively (global-key-binding "\t")))
+
+     ((if (and (memq org-cycle-emulate-tab '(white whitestart))
+	       (save-excursion (beginning-of-line 1) (looking-at "[ \t]*"))
+	       (or (and (eq org-cycle-emulate-tab 'white)
+			(= (match-end 0) (point-at-eol)))
+		   (and (eq org-cycle-emulate-tab 'whitestart)
+			(>= (match-end 0) pos))))
+	  t
+	(eq org-cycle-emulate-tab t))
+      (call-interactively (global-key-binding "\t")))
+
+     (t (save-excursion
+	  (org-back-to-heading)
+	  (org-cycle))))))
+
+;;; lisp-org-hook
 (defun lisp-org-hook ()
 (setq outline-regexp  "[;\f]+") ; Naveen v0.1 change '*' to ';' 	
 )
@@ -200,8 +388,8 @@
               font-lock-string-face))))
     font-lock-comment-face))
 
-;; The LISP-SYNTAX argument is used by code in inf-lisp.el and is
-;; (uselessly) passed from pp.el, chistory.el, gnus-kill.el and score-mode.el
+;;; The LISP-SYNTAX argument is used by code in inf-lisp.el and is
+;;;; (uselessly) passed from pp.el, chistory.el, gnus-kill.el and score-mode.el
 (defun lisp-mode-variables (&optional lisp-syntax)
   (when lisp-syntax
     (set-syntax-table lisp-mode-syntax-table))
@@ -213,7 +401,7 @@
   ;; Adaptive fill mode gets the fill wrong for a one-line paragraph made of
   ;; a single docstring.  Let's fix it here.
   (set (make-local-variable 'adaptive-fill-function)
-       (lambda () (if (looking-at "\\s-+\"[^\n\"]+\"\\s-*$") "")))
+       (lambda () (if (looking-at "\\s-+\"[^\n\"]+\"\\s-*$") ""))) ; "
   ;; Adaptive fill mode gets in the way of auto-fill,
   ;; and should make no difference for explicit fill
   ;; because lisp-fill-paragraph should do the job.
@@ -266,7 +454,6 @@
 
 (defvar lisp-mode-shared-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\t" 'lisp-indent-line)
     (define-key map "\e\C-q" 'indent-sexp)
     (define-key map "\177" 'backward-delete-char-untabify)
     ;; This gets in the way when viewing a Lisp file in view-mode.  As
@@ -339,7 +526,7 @@ All commands in `lisp-mode-shared-map' are inherited by this map.")
   :type 'hook
   :group 'lisp)
 
-(defcustom lisp-mode-hook nil ; '(lisp-org-hook) v0.1 Naveen 
+(defcustom lisp-mode-hook '(lisp-org-hook) ; v0.1 Naveen 
   "Hook run when entering Lisp mode."
   :options '(imenu-add-menubar-index)
   :type 'hook
@@ -406,7 +593,10 @@ if that value is non-nil."
   (setq font-lock-keywords-case-fold-search t)
   (setq imenu-case-fold-search t)
   (set-syntax-table lisp-mode-syntax-table)
-  (run-mode-hooks 'lisp-mode-hook))
+  (run-mode-hooks 'lisp-mode-hook)
+    (local-set-key "\t" 'org-cycle) ; v0.1 Naveen 
+    (local-set-key "\M-c\t" 'lisp-indent-line) ; v0.1 Naveen
+)
 (put 'lisp-mode 'find-tag-default-function 'lisp-find-tag-default)
 
 (defun lisp-find-tag-default ()
@@ -807,7 +997,6 @@ which see."
 With argument, indent any additional lines of the same expression
 rigidly along with this one."
   (interactive "P")
-  (org-cycle) ; v0.1 Naveen Garg
   (let ((indent (calculate-lisp-indent)) shift-amt end
 	(pos (- (point-max) (point)))
 	(beg (progn (beginning-of-line) (point))))
