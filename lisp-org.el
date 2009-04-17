@@ -1,34 +1,34 @@
 ; lisp-org-mode
-;; Author: Naveen Garg
-;;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands
+ ;; Author: Naveen Garg
+ ;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands
 
-;; Copyright (C) 1985, 1986, 1999, 2000, 2001, 2002, 2003, 2004,
-;;   2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+ ;; Copyright (C) 1985, 1986, 1999, 2000, 2001, 2002, 2003, 2004,
+ ;;   2005, 2006, 2007, 2008 Free Software Foundation, Inc.
 
-;; Maintainer: FSF
-;; Keywords: lisp, languages
+ ;; Maintainer: FSF
+ ;; Keywords: lisp, languages
 
-;; This file is part of GNU Emacs.
+ ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
+ ;; GNU Emacs is free software; you can redistribute it and/or modify
+ ;; it under the terms of the GNU General Public License as published by
+ ;; the Free Software Foundation; either version 3, or (at your option)
+ ;; any later version.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+ ;; GNU Emacs is distributed in the hope that it will be useful,
+ ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ;; GNU General Public License for more details.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
+ ;; You should have received a copy of the GNU General Public License
+ ;; along with GNU Emacs; see the file COPYING.  If not, write to the
+ ;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
 
-;; The base major mode for editing Lisp code (used also for Emacs Lisp).
-;; This mode is documented in the Emacs manual.
+ ;; The base major mode for editing Lisp code (used also for Emacs Lisp).
+ ;; This mode is documented in the Emacs manual.
 
 ; Code:
 ;; defvar
@@ -127,7 +127,7 @@
 
   "Imenu generic expression for Lisp mode.  See `imenu-generic-expression'.")
 
-;;; This was originally in autoload.el and is still used there.
+ ;;; This was originally in autoload.el and is still used there.
 (put 'autoload 'doc-string-elt 3)
 (put 'defun    'doc-string-elt 3)
 (put 'defun*    'doc-string-elt 3)
@@ -347,7 +347,6 @@
 	  (org-back-to-heading)
 	  (org-cycle))))))
 
-;;; lisp-org-hook
 (defun lisp-org-hook ()
 (setq outline-regexp  "[;\f]+") ; Naveen v0.1 change '*' to ';' 	
 )
@@ -388,8 +387,8 @@
               font-lock-string-face))))
     font-lock-comment-face))
 
-;;; The LISP-SYNTAX argument is used by code in inf-lisp.el and is
-;;;; (uselessly) passed from pp.el, chistory.el, gnus-kill.el and score-mode.el
+ ;;; The LISP-SYNTAX argument is used by code in inf-lisp.el and is
+ ;;;; (uselessly) passed from pp.el, chistory.el, gnus-kill.el and score-mode.el
 (defun lisp-mode-variables (&optional lisp-syntax)
   (when lisp-syntax
     (set-syntax-table lisp-mode-syntax-table))
@@ -548,13 +547,16 @@ Entry to this mode calls the value of `emacs-lisp-mode-hook'
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
+  (org-mode) ; Naveen v0.3
   (use-local-map emacs-lisp-mode-map)
   (set-syntax-table emacs-lisp-mode-syntax-table)
   (setq major-mode 'emacs-lisp-mode)
   (setq mode-name "Emacs-Lisp")
   (lisp-mode-variables)
   (setq imenu-case-fold-search nil)
-  (run-mode-hooks 'emacs-lisp-mode-hook))
+  (run-mode-hooks 'emacs-lisp-mode-hook)
+  (set-org-locals) ; naveen v0.3
+) ; end emacs-lisp-mode()
 (put 'emacs-lisp-mode 'custom-mode-group 'lisp)
 
 (defvar lisp-mode-map
@@ -584,8 +586,6 @@ if that value is non-nil."
   (setq major-mode 'lisp-mode)
   (setq mode-name "Lisp")
   (lisp-mode-variables)
-  (make-local-variable 'outline-regexp)  ; naveen v0.1
-  (setq outline-regexp  "[;\f]+")  ; naveen v0.1
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip
        "\\(\\(^\\|[^\\\\\n]\\)\\(\\\\\\\\\\)*\\)\\(;+\\|#|\\) *")
@@ -593,7 +593,13 @@ if that value is non-nil."
   (setq font-lock-keywords-case-fold-search t)
   (setq imenu-case-fold-search t)
   (set-syntax-table lisp-mode-syntax-table)
+  (set-org-locals) ; naveen v0.3
   (run-mode-hooks 'lisp-mode-hook)
+)
+
+(defun set-org-locals ()
+  (make-local-variable 'outline-regexp)  ; naveen v0.1
+  (setq outline-regexp  "[;\f]+")  ; naveen v0.1
     (local-set-key "\t" 'org-cycle) ; v0.1 Naveen 
     (local-set-key "\M-c\t" 'lisp-indent-line) ; v0.1 Naveen
 )
@@ -606,10 +612,10 @@ if that value is non-nil."
           (substring default (match-end 0))
 	default))))
 
-;; Used in old LispM code.
+ ;; Used in old LispM code.
 (defalias 'common-lisp-mode 'lisp-mode)
 
-;; This will do unless inf-lisp.el is loaded.
+ ;; This will do unless inf-lisp.el is loaded.
 (defun lisp-eval-defun (&optional and-go)
   "Send the current defun to the Lisp process made by \\[run-lisp]."
   (interactive)
@@ -965,14 +971,14 @@ which see."
 	       (setq debug-on-error new-value))
 	     value)))))
 
-;; May still be used by some external Lisp-mode variant.
+ ;; May still be used by some external Lisp-mode variant.
 (define-obsolete-function-alias 'lisp-comment-indent 'comment-indent-default)
 
-;; This function just forces a more costly detection of comments (using
-;; parse-partial-sexp from beginning-of-defun).  I.e. It avoids the problem of
-;; taking a `;' inside a string started on another line for a comment starter.
-;; Note: `newcomment' gets it right now since we set comment-use-global-state
-;; so we could get rid of it.   -stef
+ ;; This function just forces a more costly detection of comments (using
+ ;; parse-partial-sexp from beginning-of-defun).  I.e. It avoids the problem of
+ ;; taking a `;' inside a string started on another line for a comment starter.
+ ;; Note: `newcomment' gets it right now since we set comment-use-global-state
+ ;; so we could get rid of it.   -stef
 (defun lisp-mode-auto-fill ()
   (if (> (current-column) (current-fill-column))
       (if (save-excursion
@@ -1289,9 +1295,9 @@ This function also returns nil meaning don't specify the indentation."
 	(+ lisp-body-indent (current-column)))))
 
 
-;; (put 'progn 'lisp-indent-function 0), say, causes progn to be indented
-;; like defun if the first form is placed on the next line, otherwise
-;; it is indented like any other form (i.e. forms line up under first).
+ ;; (put 'progn 'lisp-indent-function 0), say, causes progn to be indented
+ ;; like defun if the first form is placed on the next line, otherwise
+ ;; it is indented like any other form (i.e. forms line up under first).
 
 (put 'lambda 'lisp-indent-function 'defun)
 (put 'autoload 'lisp-indent-function 'defun)
@@ -1453,7 +1459,7 @@ A prefix argument specifies pretty-printing."
               (delete-char -1)))))
   (indent-sexp))
 
-;;;; Lisp paragraph filling commands.
+ ;;;; Lisp paragraph filling commands.
 
 (defcustom emacs-lisp-docstring-fill-column 65
   "Value of `fill-column' to use when filling a docstring.
@@ -1546,5 +1552,5 @@ means don't indent that line."
 
 (provide 'lisp-mode)
 
-;; arch-tag: 414c7f93-c245-4b77-8ed5-ed05ef7ff1bf
-;;; lisp-mode.el ends here
+ ;; arch-tag: 414c7f93-c245-4b77-8ed5-ed05ef7ff1bf
+ ;;; lisp-mode.el ends here
