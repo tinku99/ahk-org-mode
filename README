@@ -1,26 +1,27 @@
-; ahk-org-mode.el --- major mode for editing AutoHotKey scripts for X/GNU Emacs
-;; v0.1 Naveen Garg
-;; modified from org-mode by Robert Widhopf-Fenk
+* ahk-org-mode.el
+** about
+v0.1 Naveen Garg
+--- major mode for editing AutoHotKey scripts for X/GNU Emacs
+modified from org-mode by Robert Widhopf-Fenk
+ahk-org-mode-URL:   http://www.autohotkey.com/~tinku99
+original ahk-mode:  http://www.robf.de/Hacking/elisp/
 
+* Authors
+**    Robert Widhopf-Fenk
+**    Naveen Garg
+* License
+** Copyright (C) 2005 Robert Widhopf-Fenk
+** Copyright (C) 2009 Naveen Garg
 
-;; Authors:   Robert Widhopf-Fenk
-;; Copyright (C) 2005 Robert Widhopf-Fenk
-;;            Naveen Garg
-;; Copyright (C) 2009 Naveen Garg
-;; Keywords: AutoHotKey, major mode
-;; ahk-org-mode-URL:   http://www.autohotkey.com/~tinku99
-;; original ahk-mode:  http://www.robf.de/Hacking/elisp/
-
-;; This code is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 2, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
-;;
+** This code is free software; you can redistribute it and/or modify
+** it under the terms of the GNU General Public License as published by
+** the Free Software Foundation; either version 2, or (at your option)
+** any later version.
+**
+** This program is distributed in the hope that it will be useful,
+** but WITHOUT ANY WARRANTY; without even the implied warranty of
+** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+** GNU General Public License for more details.
 
 
 
