@@ -1,6 +1,7 @@
 ; lisp-org-mode
 ;; doc
  ;; Author: Naveen Garg
+ ;; seems to require slime off for now
  ;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands
 
  ;; Copyright (C) 1985, 1986, 1999, 2000, 2001, 2002, 2003, 2004,
