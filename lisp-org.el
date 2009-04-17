@@ -1,4 +1,5 @@
 ; lisp-org-mode
+;; doc
  ;; Author: Naveen Garg
  ;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands
 
@@ -30,15 +31,16 @@
  ;; The base major mode for editing Lisp code (used also for Emacs Lisp).
  ;; This mode is documented in the Emacs manual.
 
-; Code:
+;; Code:
 ;; defvar
+;;; (defvar font-lock-comment-face)
 (defvar font-lock-comment-face)
 (defvar font-lock-doc-face)
 (defvar font-lock-keywords-case-fold-search)
 (defvar font-lock-string-face)
-
 (defvar lisp-mode-abbrev-table nil)
 
+;;; (defvar emacs-lisp-mode-syntax-table
 (defvar emacs-lisp-mode-syntax-table
   (let ((table (make-syntax-table)))
     (let ((i 0))
@@ -80,6 +82,7 @@
       (modify-syntax-entry ?\] ")[  " table))
     table))
 
+;;; (defvar lisp-mode-syntax-table
 (defvar lisp-mode-syntax-table
   (let ((table (copy-syntax-table emacs-lisp-mode-syntax-table)))
     (modify-syntax-entry ?\[ "_   " table)
@@ -90,6 +93,7 @@
 
 (define-abbrev-table 'lisp-mode-abbrev-table ())
 
+;;; (defvar lisp-imenu-generic-expression
 (defvar lisp-imenu-generic-expression
   (list
    (list nil
@@ -156,10 +160,12 @@
 (put 'defvaralias 'doc-string-elt 3)
 (put 'define-category 'doc-string-elt 2)
 
+;;; (defvar lisp-doc-string-elt-property 'doc-string-elt
 (defvar lisp-doc-string-elt-property 'doc-string-elt
   "The symbol property that holds the docstring position info.")
 
 ;; defun
+;;; (defun org-cycle (&optional arg)
 (defun org-cycle (&optional arg)
   "Visibility cycling for Org-mode.
 
@@ -347,10 +353,12 @@
 	  (org-back-to-heading)
 	  (org-cycle))))))
 
+;;; (defun lisp-org-hook ()
 (defun lisp-org-hook ()
 (setq outline-regexp  "[;\f]+") ; Naveen v0.1 change '*' to ';' 	
 )
 
+;;; (defun lisp-font-lock-syntactic-face-function (state)
 (defun lisp-font-lock-syntactic-face-function (state)
   (if (nth 3 state)
       ;; This might be a (doc)string or a |...| symbol.
@@ -389,6 +397,7 @@
 
  ;;; The LISP-SYNTAX argument is used by code in inf-lisp.el and is
  ;;;; (uselessly) passed from pp.el, chistory.el, gnus-kill.el and score-mode.el
+;;; (defun lisp-mode-variables (&optional lisp-syntax)
 (defun lisp-mode-variables (&optional lisp-syntax)
   (when lisp-syntax
     (set-syntax-table lisp-mode-syntax-table))
@@ -444,6 +453,7 @@
 	  (font-lock-syntactic-face-function
 	   . lisp-font-lock-syntactic-face-function))))
 
+;;; (defun lisp-outline-level ()
 (defun lisp-outline-level ()
   "Lisp mode `outline-level' function."
   (let ((len (- (match-end 0) (match-beginning 0))))
@@ -451,6 +461,7 @@
 	1000
       len)))
 
+;;; (defvar lisp-mode-shared-map
 (defvar lisp-mode-shared-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\e\C-q" 'indent-sexp)
@@ -462,6 +473,7 @@
     map)
   "Keymap for commands shared by all sorts of Lisp modes.")
 
+;;; (defvar emacs-lisp-mode-map ()
 (defvar emacs-lisp-mode-map ()
   "Keymap for Emacs Lisp mode.
 All commands in `lisp-mode-shared-map' are inherited by this map.")
@@ -497,6 +509,7 @@ All commands in `lisp-mode-shared-map' are inherited by this map.")
     (put 'comment-region 'menu-enable 'mark-active)
     (put 'indent-region 'menu-enable 'mark-active)))
 
+;;; (defun emacs-lisp-byte-compile ()
 (defun emacs-lisp-byte-compile ()
   "Byte compile the file containing the current buffer."
   (interactive)
@@ -504,6 +517,7 @@ All commands in `lisp-mode-shared-map' are inherited by this map.")
       (byte-compile-file buffer-file-name)
     (error "The buffer must be saved in a file first")))
 
+;;; (defun emacs-lisp-byte-compile-and-load ()
 (defun emacs-lisp-byte-compile-and-load ()
   "Byte-compile the current file (if it has changed), then load compiled code."
   (interactive)
@@ -537,6 +551,7 @@ All commands in `lisp-mode-shared-map' are inherited by this map.")
   :type 'hook
   :group 'lisp)
 
+;;; (defun emacs-lisp-mode ()
 (defun emacs-lisp-mode ()
   "Major mode for editing Lisp code to run in Emacs.
 Commands:
@@ -559,6 +574,7 @@ if that value is non-nil."
 ) ; end emacs-lisp-mode()
 (put 'emacs-lisp-mode 'custom-mode-group 'lisp)
 
+;;; (defvar lisp-mode-map
 (defvar lisp-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map lisp-mode-shared-map)
@@ -568,6 +584,7 @@ if that value is non-nil."
   "Keymap for ordinary Lisp mode.
 All commands in `lisp-mode-shared-map' are inherited by this map.")
 
+;;; (defun lisp-mode ()
 (defun lisp-mode ()
   "Major mode for editing Lisp code for Lisps other than GNU Emacs Lisp.
 Commands:
@@ -597,6 +614,7 @@ if that value is non-nil."
   (run-mode-hooks 'lisp-mode-hook)
 )
 
+;;; (defun set-org-locals ()
 (defun set-org-locals ()
   (make-local-variable 'outline-regexp)  ; naveen v0.1
   (setq outline-regexp  "[;\f]+")  ; naveen v0.1
@@ -605,6 +623,7 @@ if that value is non-nil."
 )
 (put 'lisp-mode 'find-tag-default-function 'lisp-find-tag-default)
 
+;;; (defun lisp-find-tag-default ()
 (defun lisp-find-tag-default ()
   (let ((default (find-tag-default)))
     (when (stringp default)
@@ -616,11 +635,13 @@ if that value is non-nil."
 (defalias 'common-lisp-mode 'lisp-mode)
 
  ;; This will do unless inf-lisp.el is loaded.
+;;; (defun lisp-eval-defun (&optional and-go)
 (defun lisp-eval-defun (&optional and-go)
   "Send the current defun to the Lisp process made by \\[run-lisp]."
   (interactive)
   (error "Process lisp does not exist"))
 
+;;; (defvar lisp-interaction-mode-map
 (defvar lisp-interaction-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map lisp-mode-shared-map)
@@ -632,6 +653,7 @@ if that value is non-nil."
   "Keymap for Lisp Interaction mode.
 All commands in `lisp-mode-shared-map' are inherited by this map.")
 
+;;; (defvar lisp-interaction-mode-abbrev-table lisp-mode-abbrev-table)
 (defvar lisp-interaction-mode-abbrev-table lisp-mode-abbrev-table)
 (define-derived-mode lisp-interaction-mode emacs-lisp-mode "Lisp Interaction"
   "Major mode for typing and evaluating Lisp forms.
@@ -648,6 +670,7 @@ Semicolons start comments.
 Entry to this mode calls the value of `lisp-interaction-mode-hook'
 if that value is non-nil.")
 
+;;; (defun eval-print-last-sexp ()
 (defun eval-print-last-sexp ()
   "Evaluate sexp before point; print value into current buffer.
 
@@ -664,6 +687,7 @@ which see."
     (terpri)))
 
 
+;;; (defun last-sexp-setup-props (beg end value alt1 alt2)
 (defun last-sexp-setup-props (beg end value alt1 alt2)
   "Set up text properties for the output of `eval-last-sexp-1'.
 BEG and END are the start and end of the output in current-buffer.
@@ -683,6 +707,7 @@ alternative printed representations that can be displayed."
 						printed-value)))))
 
 
+;;; (defun last-sexp-toggle-display (&optional arg)
 (defun last-sexp-toggle-display (&optional arg)
   "Toggle between abbreviated and unabbreviated printed representations."
   (interactive "P")
@@ -706,6 +731,7 @@ alternative printed representations that can be displayed."
 				 (nth 1 value))
 	  (goto-char (min (point-max) point)))))))
 
+;;; (defun prin1-char (char)
 (defun prin1-char (char)
   "Return a string representing CHAR as a character rather than as an integer.
 If CHAR is not a character, return nil."
@@ -743,6 +769,7 @@ If CHAR is not a character, return nil."
 	      string))))
 
 
+;;; (defun preceding-sexp ()
 (defun preceding-sexp ()
   "Return sexp before the point."
   (let ((opoint (point))
@@ -796,6 +823,7 @@ If CHAR is not a character, return nil."
 	  expr)))))
 
 
+;;; (defun eval-last-sexp-1 (eval-last-sexp-arg-internal)
 (defun eval-last-sexp-1 (eval-last-sexp-arg-internal)
   "Evaluate sexp before point; print value in minibuffer.
 With argument, print output into current buffer."
@@ -803,6 +831,7 @@ With argument, print output into current buffer."
     (eval-last-sexp-print-value (eval (preceding-sexp)))))
 
 
+;;; (defun eval-last-sexp-print-value (value)
 (defun eval-last-sexp-print-value (value)
   (let ((unabbreviated (let ((print-length nil) (print-level nil))
 			 (prin1-to-string value)))
@@ -826,8 +855,10 @@ With argument, print output into current buffer."
 	))))
 
 
+;;; (defvar eval-last-sexp-fake-value (make-symbol "t"))
 (defvar eval-last-sexp-fake-value (make-symbol "t"))
 
+;;; (defun eval-last-sexp (eval-last-sexp-arg-internal)
 (defun eval-last-sexp (eval-last-sexp-arg-internal)
   "Evaluate sexp before point; print value in minibuffer.
 Interactively, with prefix argument, print output into current buffer.
@@ -845,6 +876,7 @@ this command arranges for all errors to enter the debugger."
 	(setq debug-on-error (cdr value)))
       (car value))))
 
+;;; (defun eval-defun-1 (form)
 (defun eval-defun-1 (form)
   "Treat some expressions specially.
 Reset the `defvar' and `defcustom' variables to the initial value.
@@ -890,6 +922,7 @@ Reinitialize the face according to the `defface' specification."
 	 (cons 'progn (mapcar 'eval-defun-1 (cdr form))))
 	(t form)))
 
+;;; (defun eval-defun-2 ()
 (defun eval-defun-2 ()
   "Evaluate defun that point is in or before.
 The value is displayed in the minibuffer.
@@ -932,6 +965,7 @@ Return the result of evaluation."
   ;; The result of evaluation has been put onto VALUES.  So return it.
   (car values))
 
+;;; (defun eval-defun (edebug-it)
 (defun eval-defun (edebug-it)
   "Evaluate the top-level form containing point, or after point.
 
@@ -979,6 +1013,7 @@ which see."
  ;; taking a `;' inside a string started on another line for a comment starter.
  ;; Note: `newcomment' gets it right now since we set comment-use-global-state
  ;; so we could get rid of it.   -stef
+;;; (defun lisp-mode-auto-fill ()
 (defun lisp-mode-auto-fill ()
   (if (> (current-column) (current-fill-column))
       (if (save-excursion
@@ -996,8 +1031,10 @@ which see."
 (put 'lisp-body-indent 'safe-local-variable
      (lambda (x) (or (null x) (integerp x))))
 
+;;; (defvar lisp-indent-function 'lisp-indent-function)
 (defvar lisp-indent-function 'lisp-indent-function)
 
+;;; (defun lisp-indent-line (&optional whole-exp)
 (defun lisp-indent-line (&optional whole-exp)
   "Indent current line as Lisp code.
 With argument, indent any additional lines of the same expression
@@ -1037,8 +1074,10 @@ rigidly along with this one."
 	     (> end beg))
 	   (indent-code-rigidly beg end shift-amt)))))
 
+;;; (defvar calculate-lisp-indent-last-sexp)
 (defvar calculate-lisp-indent-last-sexp)
 
+;;; (defun calculate-lisp-indent (&optional parse-start)
 (defun calculate-lisp-indent (&optional parse-start)
   "Return appropriate indentation for current line as Lisp code.
 In usual case returns an integer: the column to indent to.
@@ -1179,6 +1218,7 @@ is the buffer position of the start of the containing expression."
               (t
                normal-indent))))))
 
+;;; (defun lisp-indent-function (indent-point state)
 (defun lisp-indent-function (indent-point state)
   "This function is the normal value of the variable `lisp-indent-function'.
 It is used when indenting a line within a function call, to see if the
@@ -1241,6 +1281,7 @@ This function also returns nil meaning don't specify the indentation."
   :type 'integer)
 (put 'lisp-body-indent 'safe-local-variable 'integerp)
 
+;;; (defun lisp-indent-specform (count state indent-point normal-indent)
 (defun lisp-indent-specform (count state indent-point normal-indent)
   (let ((containing-form-start (elt state 1))
         (i count)
@@ -1286,6 +1327,7 @@ This function also returns nil meaning don't specify the indentation."
           body-indent
           normal-indent))))
 
+;;; (defun lisp-indent-defform (state indent-point)
 (defun lisp-indent-defform (state indent-point)
   (goto-char (car (cdr state)))
   (forward-line 1)
@@ -1332,6 +1374,7 @@ This function also returns nil meaning don't specify the indentation."
 (put 'when 'lisp-indent-function 1)
 (put 'unless 'lisp-indent-function 1)
 
+;;; (defun indent-sexp (&optional endpos)
 (defun indent-sexp (&optional endpos)
   "Indent each line of the list starting just after point.
 If optional arg ENDPOS is given, indent each line, stopping when
@@ -1435,6 +1478,7 @@ ENDPOS is encountered."
 	    (setq outer-loop-done (= (point) last-point))
 	    (setq last-point (point)))))))
 
+;;; (defun lisp-indent-region (start end)
 (defun lisp-indent-region (start end)
   "Indent every line whose first char is between START and END inclusive."
   (save-excursion
@@ -1445,6 +1489,7 @@ ENDPOS is encountered."
       (indent-sexp endmark)
       (set-marker endmark nil))))
 
+;;; (defun indent-pp-sexp (&optional arg)
 (defun indent-pp-sexp (&optional arg)
   "Indent each line of the list starting just after point, or prettyprint it.
 A prefix argument specifies pretty-printing."
@@ -1469,6 +1514,7 @@ Any non-integer value means do not use a different value of
                  (const :tag "Use the current `fill-column'" t))
   :group 'lisp)
 
+;;; (defun lisp-fill-paragraph (&optional justify)
 (defun lisp-fill-paragraph (&optional justify)
   "Like \\[fill-paragraph], but handle Emacs Lisp comments and docstrings.
 If any of the current line is a comment, fill the comment or the
@@ -1517,6 +1563,7 @@ and initial semicolons."
       ;; Never return nil.
       t))
 
+;;; (defun indent-code-rigidly (start end arg &optional nochange-regexp)
 (defun indent-code-rigidly (start end arg &optional nochange-regexp)
   "Indent all lines of code, starting in the region, sideways by ARG columns.
 Does not affect lines starting inside comments or strings, assuming that
