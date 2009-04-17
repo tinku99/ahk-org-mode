@@ -1,16 +1,16 @@
 ; lisp-org-mode
 ;; doc
- ;; Author: Naveen Garg
+ ;; Modified lisp-mode by Naveen Garg
  ;; seems to require slime off for now
  ;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands
 
  ;; Copyright (C) 1985, 1986, 1999, 2000, 2001, 2002, 2003, 2004,
  ;;   2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+ ;; Copyright (C) 2009 Naveen Garg, MD
+ ;; Maintainer: Naveen Garg, MD
+ ;; Keywords: lisp, org-mode, emacs
 
- ;; Maintainer: FSF
- ;; Keywords: lisp, languages
-
- ;; This file is part of GNU Emacs.
+ ;; a major mode for GNU Emacs.
 
  ;; GNU Emacs is free software; you can redistribute it and/or modify
  ;; it under the terms of the GNU General Public License as published by
@@ -27,10 +27,6 @@
  ;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  ;; Boston, MA 02110-1301, USA.
 
-;;; Commentary:
-
- ;; The base major mode for editing Lisp code (used also for Emacs Lisp).
- ;; This mode is documented in the Emacs manual.
 
 ;; Code:
 ;; defvar
