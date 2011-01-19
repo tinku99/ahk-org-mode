@@ -1,10 +1,14 @@
-; ahk-org-mode.el --- major mode for editing AutoHotKey scripts for X/GNU Emacs combined with org-mode 
-;; v0.1 Naveen Garg
-;; modified from org-mode by Robert Widhopf-Fenk
-;; Authors:   Robert Widhopf-Fenk
+; v1.0 Naveen 
+
+;;; ahk-org-mode.el --- major mode for editing AutoHotKey scripts for X/GNU Emacs combined with org-mode 
+
 ;; Copyright (C) 2005 Robert Widhopf-Fenk
+;; Copyright (C) 2008 Naveen Garg
+
+
+;; Authors:   Robert Widhopf-Fenk
 ;;            Naveen Garg
-;; Copyright (C) 2009 Naveen Garg
+
 ;; Keywords: AutoHotKey, major mode
 ;; ahk-org-mode-URL:   http://www.autohotkey.com/~tinku99
 ;; original ahk-mode:  http://www.robf.de/Hacking/elisp/
@@ -55,7 +59,7 @@
 
 (eval-when-compile
   (require 'font-lock)
-;  (if (locate-library "w3m") (require 'w3m))
+ ;  (if (locate-library "w3m") (require 'w3m))
   (require 'cl))
 
 ;;; Code:
@@ -93,7 +97,7 @@
     (modify-syntax-entry ?]  "w" table)
     ;; some additional characters used in paths and switches  
     (modify-syntax-entry ?\\  "w" table)
-;    (modify-syntax-entry ?/  "w" table)
+ ;    (modify-syntax-entry ?/  "w" table)
     (modify-syntax-entry ?-  "w" table)
     (modify-syntax-entry ?:  "w" table)
     (modify-syntax-entry ?.  "w" table)
@@ -112,20 +116,14 @@
   "Abbreviation table used in `ahk-org-mode' buffers.")
 
 (defun ahk-keys()
-    (local-set-key "\C-c\C-h" 'ahk-www-help-at-point)
-    (local-set-key [f1] 'ahk-www-help-at-point)
-    (local-set-key [f2] 'ahk-www-forum-at-point)
-
-(local-set-key "\C-c\C-c" 'ahk-comment-region)
-    (local-set-key "\C-c\C-i" 'ahk-insert-command-template)
-  (local-set-key "\C-c\t" 'ahk-indent-line-and-complete)
-    (local-set-key "\M-c\t" 'ahk-indent-region)
-    (local-set-key "}" 'ahk-electric-brace)
 )
-
+ ;  (local-unset-key "}")
 
 
 (defvar ahk-Commands-list nil
+  "A list of ahk commands and parameters.
+Will be initialized by `ahk-init'")
+(defvar ahk-Functions-list nil
   "A list of ahk commands and parameters.
 Will be initialized by `ahk-init'")
 
@@ -161,7 +159,7 @@ An AHK installation provides a subdirectory \"Extras/Editors/Syntax\"
 containing a list of keywords, variables, commands and keys.
 
 This directory must be specified in the variable `ahk-syntax-directory'."
-  (interactive)
+  ; (interactive)
 
   (message "Initializing ahk-org-mode variables ...")
   (when (null ahk-syntax-directory)
@@ -169,9 +167,9 @@ This directory must be specified in the variable `ahk-syntax-directory'."
      'ahk-syntax-directory
      (read-file-name "Please give the AHK-Syntax directory: "))
     (custom-save-all))
-
-  (save-excursion
     (set-buffer (get-buffer-create " *ahk-org-mode-temp*"))
+  (save-excursion
+
     ;; read commands
     (erase-buffer)
     (insert-file-contents (expand-file-name "Commands.txt"
@@ -185,6 +183,20 @@ This directory must be specified in the variable `ahk-syntax-directory'."
                                        (match-string 1)
                                        (match-string 2))
                                       ahk-Commands-list)))
+      (forward-line 1))
+    ;; read functions
+    (erase-buffer)
+    (insert-file-contents (expand-file-name "Functions.txt"
+                                            ahk-syntax-directory))
+    (setq ahk-Functions-list nil)
+    (goto-char 0)
+    (while (not (eobp))
+      (if (not (looking-at "\\([^;\r\n][^(\t\r\n\( ]+\\)\\([^\r\n]*\\)"))
+          nil;; (error "Unknown file syntax")
+        (setq ahk-Functions-list (cons (list
+                                       (match-string 1)
+                                       (match-string 2))
+                                      ahk-Functions-list)))
       (forward-line 1))
     
     ;; read keys
@@ -221,11 +233,13 @@ This directory must be specified in the variable `ahk-syntax-directory'."
           nil;; (error "Unknown file syntax of Variables.txt")
         (setq ahk-Variables-list (cons (match-string 1) ahk-Variables-list)))
       (forward-line 1))
-  
+    
+    (erase-buffer)
     ;; built completion list
     (setq ahk-completion-list
           (mapcar (lambda (c) (list c))
                   (append (mapcar 'car ahk-Commands-list)
+			  (mapcar 'car ahk-Functions-list)
                           ahk-Keywords-list
                           ahk-Variables-list
                           ahk-Keys-list)))
@@ -255,6 +269,12 @@ This directory must be specified in the variable `ahk-syntax-directory'."
                     "\\)")
             2
             'font-lock-function-name-face)
+	   (list
+            (concat "\\("
+                    (mapconcat 'regexp-quote (mapcar 'car ahk-Functions-list) "\\|")
+                    "\\)")
+            2
+            'font-lock-function-name-face)
            (cons
             (concat "\\b\\("
                     (mapconcat 'regexp-quote ahk-Keywords-list "\\|")
@@ -266,8 +286,9 @@ This directory must be specified in the variable `ahk-syntax-directory'."
                     "\\)\\b")
             'font-lock-constant-face)
            )))
-  
-  (message "Initializing ahk-org-mode variables done."))
+
+  (message "Initializing ahk-org-mode variables done.")
+  (kill-buffer))
 ;; this was an attempt to get multi-line comments correctly highlighted, I
 ;; tried to understand how cc-mode is doing it, but I have to admit I do not
 ;; understand it!
@@ -300,6 +321,8 @@ This directory must be specified in the variable `ahk-syntax-directory'."
           (re-search-forward "^/\\*\\(.*\r?\n\\)*" limit t)
           t))
        ))))
+(defvar ahk-org-mode-map)
+(defvar major-mode-name "AHK")
 
 (defun ahk-org-mode-hook-activate-filling ()
   "Activates `auto-fill-mode' and `filladapt-mode'."
@@ -317,17 +340,37 @@ This directory must be specified in the variable `ahk-syntax-directory'."
     (setq font-lock-defaults '(ahk-org-mode-font-lock-keywords))
     (setq font-lock-keywords-case-fold-search t))
   
-  ; (use-local-map ahk-org-mode-map)
+  (use-local-map ahk-org-mode-map)
   (easy-menu-add ahk-menu)
 ;  (setq comment-start ";")
   (font-lock-mode 1)
 ; (force-mode-line-update)
-  (auto-fill-mode 1)
-  (setq outline-regexp  "[;\f]+")  ; Naveen v0.1 change '*' to ';' for outline marker
+  (auto-fill-mode 0)
+  (setq outline-regexp  "[;]+")
   (ahk-keys)
+  (auto-complete-mode)
+  (setq fill-column 100)
+  (toggle-truncate-lines 0)
   (if (locate-library "filladapt")
       (filladapt-mode 1)))
 
+(defvar ahk-org-mode-map ()
+  "Keymap for ahk-org-mode.")
+(require 'org)
+(if ahk-org-mode-map
+    ()
+  (let ((map (make-sparse-keymap "Ahk-Org")))
+    (setq ahk-org-mode-map (make-sparse-keymap))
+    (set-keymap-parent ahk-org-mode-map org-mode-map)
+    (define-key ahk-org-mode-map "\C-c\C-h" 'ahk-www-help-at-point)
+    (define-key ahk-org-mode-map [f1] 'ahk-www-help-at-point)
+    (define-key ahk-org-mode-map [f2] 'ahk-www-forum-at-point)
+
+(define-key ahk-org-mode-map "\C-c\C-c" 'ahk-comment-region)
+(define-key ahk-org-mode-map "\C-i" 'ahk-insert-command-template)   
+(define-key ahk-org-mode-map [tab] 'ahk-indent-line-and-complete)   
+(define-key ahk-org-mode-map [S-tab] 'org-cycle)   
+(define-key ahk-org-mode-map "\M-q" 'ahk-indent-region)   ))
 
 ;;;###autoload
 (defun ahk-org-mode ()
@@ -337,9 +380,12 @@ Key bindings:
 \\{ahk-org-mode-map}"
   (interactive)
   (kill-all-local-variables)
-  (org-mode) ; Naveen v0.1
+  (org-mode)
+  (auto-complete-mode)
+  (use-local-map ahk-org-mode-map)
   (if (null ahk-Commands-list)
-      (ahk-init))
+      (ahk-init)
+    (ahk-org-mode-hook-activate-filling))
   (run-hooks 'ahk-org-mode-hook))
 
 (defun ahk-indent-line ()
@@ -440,7 +486,7 @@ Key bindings:
             (delete-region start end)
             (if (listp completions) (setq completions (car completions)))
             (insert completions)
-            (let ((help (assoc completions ahk-Commands-list)))
+            (let ((help (assoc completions (append ahk-Commands-list ahk-Functions-list))))
               (if help (message "%s" (mapconcat 'identity help ""))))
             )))))
 
@@ -457,9 +503,10 @@ Key bindings:
         (skip-chars-backward " \t")
         (bolp))
       nil
- (ahk-indent-line)
- (newline)
-)
+    (ahk-indent-line)
+    (newline)
+    )
+  
   (self-insert-command arg)
   (ahk-indent-line)
   (newline)
@@ -469,14 +516,9 @@ Key bindings:
     (setq event (if (featurep 'xemacs)
 		    (event-to-character event)
 		  (setq event (if (stringp event) (aref event 0) event))))
+    ))
 
-    (when (equal event ?{)
-;      (newline)
-      (ahk-indent-line)
-      (insert ?})
-      (ahk-indent-line)
- ;     (forward-line -1)
-      (ahk-indent-line))))
+
 
 (defun ahk-electric-return ()
   "Insert newline and indent."
@@ -488,8 +530,11 @@ Key bindings:
 (defun ahk-insert-command-template ()
   "Insert a command template."
   (interactive)
-  (let ((completions (mapcar (lambda (c) (list (mapconcat 'identity c "")))
-                             ahk-Commands-list))
+  (let ((completions (append 
+		      (mapcar (lambda (c) (list (mapconcat 'identity c "")))
+			      ahk-Commands-list) 
+		      (mapcar (lambda (c) (list (mapconcat 'identity c "")))
+			      ahk-Functions-list)))
         (completion-ignore-case t)
         (start (point))
         end 
